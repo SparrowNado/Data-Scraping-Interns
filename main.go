@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -185,7 +187,8 @@ func processFile(url string) error {
 		return fmt.Errorf("failed to download file: %s", resp.Status)
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	// Read the XML content
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
@@ -194,7 +197,7 @@ func processFile(url string) error {
 	filename := filepath.Base(url)
 
 	// Write the XML content to a file
-	err = ioutil.WriteFile(filename, body, 0644)
+	err = os.WriteFile(filename, body, 0644)
 	if err != nil {
 		return err
 	}
@@ -216,7 +219,7 @@ func processFile(url string) error {
 	}
 
 	// Write JSON content to a file
-	err = ioutil.WriteFile(jsonFilename, jsonData, 0644)
+	err = os.WriteFile(jsonFilename, jsonData, 0644)
 	if err != nil {
 		return err
 	}
