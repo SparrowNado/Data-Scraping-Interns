@@ -1,0 +1,10 @@
+{
+    "metadata": {
+        "title": "CVE-2005-1038",
+        "affected": {
+            "family": "unix",
+            "platform": "openSUSE 10.2"
+        }
+        
+    }
+}
