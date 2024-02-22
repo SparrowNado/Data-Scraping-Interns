@@ -1,3 +1,5 @@
+// SUSE OVAL
+
 package main
 
 import (
