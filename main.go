@@ -6,8 +6,9 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -160,7 +161,7 @@ func fetchFiles(url string) ([]string, error) {
 		return nil, fmt.Errorf("failed to fetch files: %s", resp.Status)
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +208,7 @@ func processFile(url string) error {
 		return fmt.Errorf("failed to download file: %s", resp.Status)
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
@@ -222,7 +223,7 @@ func processFile(url string) error {
 		// Decompress the bz2 file
 		reader := bytes.NewReader(body)
 		bzip2Reader := bzip2.NewReader(reader)
-		xmlContent, err = ioutil.ReadAll(bzip2Reader)
+		xmlContent, err = io.ReadAll(bzip2Reader)
 		if err != nil {
 			return err
 		}
@@ -239,7 +240,7 @@ func processFile(url string) error {
 	}
 
 	// Create JSON filename
-	jsonFilename := strings.TrimSuffix(filename, filepath.Ext(filename)) + ".json"
+	jsonFilename := strings.TrimSuffix(filename, ".xml.bz2") + ".json"
 
 	// Marshal OvalDefinitions to JSON
 	jsonData, err := json.MarshalIndent(ovalDefinitions, "", "    ")
@@ -248,11 +249,26 @@ func processFile(url string) error {
 	}
 
 	// Write JSON content to a file
-	err = ioutil.WriteFile(jsonFilename, jsonData, 0644)
+	err = os.WriteFile(jsonFilename, jsonData, 0644)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("File %s processed successfully.\n", filename)
+	// Create XML filename
+	xmlFilename := strings.TrimSuffix(filename, ".xml.bz2") + ".xml"
+
+	// Marshal OvalDefinitions to XML
+	xmlData, err := xml.MarshalIndent(ovalDefinitions, "", "    ")
+	if err != nil {
+		return err
+	}
+
+	// Write XML content to a file
+	err = os.WriteFile(xmlFilename, xmlData, 0644)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Files %s and %s processed successfully.\n", jsonFilename, xmlFilename)
 	return nil
 }
