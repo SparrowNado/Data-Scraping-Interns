@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"compress/bzip2"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -12,99 +14,121 @@ import (
 )
 
 type OvalDefinitions struct {
-	XMLName        xml.Name `xml:"oval_definitions" json:"oval_definitions,omitempty"`
-	SchemaLocation string   `xml:"schemaLocation,attr" json:"schemalocation,omitempty"`
-	Xmlns          string   `xml:"xmlns,attr" json:"xmlns,omitempty"`
-	Xsi            string   `xml:"xsi,attr" json:"xsi,omitempty"`
-	Oval           string   `xml:"oval,attr" json:"oval,omitempty"`
-	OvalDef        string   `xml:"oval-def,attr" json:"oval-def,omitempty"`
+	XMLName        xml.Name `xml:"oval_definitions"`
+	Xmlns          string   `xml:"xmlns,attr"`
+	Oval           string   `xml:"oval,attr"`
+	OvalDef        string   `xml:"oval-def,attr"`
+	UnixDef        string   `xml:"unix-def,attr"`
+	RedDef         string   `xml:"red-def,attr"`
+	Xsi            string   `xml:"xsi,attr"`
+	SchemaLocation string   `xml:"schemaLocation,attr"`
 	Generator      struct {
-		ProductName   string `xml:"product_name"`
-		SchemaVersion string `xml:"schema_version"`
-		Timestamp     string `xml:"timestamp"`
-	} `xml:"generator" json:"generator,omitempty"`
+		ProductName    string `xml:"product_name"`
+		ProductVersion string `xml:"product_version"`
+		SchemaVersion  string `xml:"schema_version"`
+		Timestamp      string `xml:"timestamp"`
+	} `xml:"generator"`
 	Definitions struct {
-		Definition []struct {
-			ID       string `xml:"id,attr" json:"id,omitempty"`
-			Version  string `xml:"version,attr" json:"version,omitempty"`
-			Class    string `xml:"class,attr" json:"class,omitempty"`
+		Definition struct {
+			ID       string `xml:"id,attr"`
+			Version  string `xml:"version,attr"`
+			Class    string `xml:"class,attr"`
 			Metadata struct {
 				Title    string `xml:"title"`
 				Affected struct {
-					Family   string `xml:"family,attr" json:"family,omitempty"`
+					Family   string `xml:"family,attr"`
 					Platform string `xml:"platform"`
-				} `xml:"affected" json:"affected,omitempty"`
+				} `xml:"affected"`
 				Reference struct {
-					RefID  string `xml:"ref_id,attr" json:"ref_id,omitempty"`
-					RefURL string `xml:"ref_url,attr" json:"ref_url,omitempty"`
-					Source string `xml:"source,attr" json:"source,omitempty"`
-				} `xml:"reference" json:"reference,omitempty"`
+					Source string `xml:"source,attr"`
+					RefID  string `xml:"ref_id,attr"`
+					RefURL string `xml:"ref_url,attr"`
+				} `xml:"reference"`
 				Description string `xml:"description"`
-			} `xml:"metadata" json:"metadata,omitempty"`
+				Advisory    struct {
+					Severity string `xml:"severity"`
+					Rights   string `xml:"rights"`
+					Issued   struct {
+						Date string `xml:"date,attr"`
+					} `xml:"issued"`
+				} `xml:"advisory"`
+			} `xml:"metadata"`
 			Criteria struct {
-				Operator  string `xml:"operator,attr" json:"operator,omitempty"`
-				Criterion []struct {
-					TestRef string `xml:"test_ref,attr" json:"test_ref,omitempty"`
-					Comment string `xml:"comment,attr" json:"comment,omitempty"`
-				} `xml:"criterion" json:"criterion,omitempty"`
-				Criteria []struct {
-					Operator  string `xml:"operator,attr" json:"operator,omitempty"`
-					Criterion []struct {
-						TestRef string `xml:"test_ref,attr" json:"test_ref,omitempty"`
-						Comment string `xml:"comment,attr" json:"comment,omitempty"`
-					} `xml:"criterion" json:"criterion,omitempty"`
-					Criteria struct {
-						Operator  string `xml:"operator,attr" json:"operator,omitempty"`
-						Criterion []struct {
-							TestRef string `xml:"test_ref,attr" json:"test_ref,omitempty"`
-							Comment string `xml:"comment,attr" json:"comment,omitempty"`
-						} `xml:"criterion" json:"criterion,omitempty"`
-					} `xml:"criteria" json:"criteria,omitempty"`
-				} `xml:"criteria" json:"criteria,omitempty"`
-			} `xml:"criteria" json:"criteria,omitempty"`
-		} `xml:"definition" json:"definition,omitempty"`
-	} `xml:"definitions" json:"definitions,omitempty"`
+				Operator  string `xml:"operator,attr"`
+				Criterion struct {
+					TestRef string `xml:"test_ref,attr"`
+					Comment string `xml:"comment,attr"`
+				} `xml:"criterion"`
+				Criteria struct {
+					Operator string `xml:"operator,attr"`
+					Criteria []struct {
+						Operator  string `xml:"operator,attr"`
+						Criterion struct {
+							TestRef string `xml:"test_ref,attr"`
+							Comment string `xml:"comment,attr"`
+						} `xml:"criterion"`
+						Criteria struct {
+							Operator string `xml:"operator,attr"`
+							Criteria []struct {
+								Operator  string `xml:"operator,attr"`
+								Criterion []struct {
+									TestRef string `xml:"test_ref,attr"`
+									Comment string `xml:"comment,attr"`
+								} `xml:"criterion"`
+							} `xml:"criteria"`
+						} `xml:"criteria"`
+					} `xml:"criteria"`
+				} `xml:"criteria"`
+			} `xml:"criteria"`
+		} `xml:"definition"`
+	} `xml:"definitions"`
 	Tests struct {
 		RpminfoTest []struct {
-			ID      string `xml:"id,attr" json:"id,omitempty"`
-			Version string `xml:"version,attr" json:"version,omitempty"`
-			Comment string `xml:"comment,attr" json:"comment,omitempty"`
-			Check   string `xml:"check,attr" json:"check,omitempty"`
-			Xmlns   string `xml:"xmlns,attr" json:"xmlns,omitempty"`
+			ID      string `xml:"id,attr"`
+			Version string `xml:"version,attr"`
+			Comment string `xml:"comment,attr"`
+			Check   string `xml:"check,attr"`
+			Xmlns   string `xml:"xmlns,attr"`
 			Object  struct {
-				ObjectRef string `xml:"object_ref,attr" json:"object_ref,omitempty"`
-			} `xml:"object" json:"object,omitempty"`
+				ObjectRef string `xml:"object_ref,attr"`
+			} `xml:"object"`
 			State struct {
-				StateRef string `xml:"state_ref,attr" json:"state_ref,omitempty"`
-			} `xml:"state" json:"state,omitempty"`
-		} `xml:"rpminfo_test" json:"rpminfo_test,omitempty"`
-	} `xml:"tests" json:"tests,omitempty"`
+				StateRef string `xml:"state_ref,attr"`
+			} `xml:"state"`
+		} `xml:"rpminfo_test"`
+	} `xml:"tests"`
 	Objects struct {
 		RpminfoObject []struct {
-			ID      string `xml:"id,attr" json:"id,omitempty"`
-			Version string `xml:"version,attr" json:"version,omitempty"`
-			Xmlns   string `xml:"xmlns,attr" json:"xmlns,omitempty"`
+			Xmlns   string `xml:"xmlns,attr"`
+			ID      string `xml:"id,attr"`
+			Version string `xml:"version,attr"`
 			Name    string `xml:"name"`
-		} `xml:"rpminfo_object" json:"rpminfo_object,omitempty"`
-	} `xml:"objects" json:"objects,omitempty"`
+		} `xml:"rpminfo_object"`
+	} `xml:"objects"`
 	States struct {
 		RpminfoState []struct {
-			ID          string `xml:"id,attr" json:"id,omitempty"`
-			AttrVersion string `xml:"version,attr" json:"version,omitempty"`
-			Xmlns       string `xml:"xmlns,attr" json:"xmlns,omitempty"`
-			Version     struct {
-				Operation string `xml:"operation,attr" json:"operation,omitempty"`
-			} `xml:"version" json:"version,omitempty"`
+			Xmlns          string `xml:"xmlns,attr"`
+			ID             string `xml:"id,attr"`
+			AttrVersion    string `xml:"version,attr"`
+			SignatureKeyid struct {
+				Operation string `xml:"operation,attr"`
+			} `xml:"signature_keyid"`
+			Version struct {
+				Operation string `xml:"operation,attr"`
+			} `xml:"version"`
+			Arch struct {
+				Operation string `xml:"operation,attr"`
+			} `xml:"arch"`
 			Evr struct {
-				Datatype  string `xml:"datatype,attr" json:"datatype,omitempty"`
-				Operation string `xml:"operation,attr" json:"operation,omitempty"`
-			} `xml:"evr" json:"evr,omitempty"`
-		} `xml:"rpminfo_state" json:"rpminfo_state,omitempty"`
-	} `xml:"states" json:"states,omitempty"`
+				Datatype  string `xml:"datatype,attr"`
+				Operation string `xml:"operation,attr"`
+			} `xml:"evr"`
+		} `xml:"rpminfo_state"`
+	} `xml:"states"`
 }
 
 func main() {
-	url := "https://ftp.suse.com/pub/projects/security/oval/"
+	url := "https://linux.oracle.com/security/oval/"
 	files, err := fetchFiles(url)
 	if err != nil {
 		panic(err)
@@ -144,7 +168,7 @@ func fetchFiles(url string) ([]string, error) {
 	var files []string
 	links := extractLinks(string(body))
 	for _, link := range links {
-		if strings.HasSuffix(link, ".xml") {
+		if strings.HasSuffix(link, ".xml.bz2") {
 			files = append(files, url+link)
 		}
 	}
@@ -191,15 +215,25 @@ func processFile(url string) error {
 	// Extract filename from URL
 	filename := filepath.Base(url)
 
-	// Write the XML content to a file
-	err = ioutil.WriteFile(filename, body, 0644)
-	if err != nil {
-		return err
+	var xmlContent []byte
+
+	// Check if the file is compressed
+	if strings.HasSuffix(filename, ".bz2") {
+		// Decompress the bz2 file
+		reader := bytes.NewReader(body)
+		bzip2Reader := bzip2.NewReader(reader)
+		xmlContent, err = ioutil.ReadAll(bzip2Reader)
+		if err != nil {
+			return err
+		}
+	} else {
+		// File is not compressed, use the body as is
+		xmlContent = body
 	}
 
 	// Unmarshal XML content
 	var ovalDefinitions OvalDefinitions
-	err = xml.Unmarshal(body, &ovalDefinitions)
+	err = xml.Unmarshal(xmlContent, &ovalDefinitions)
 	if err != nil {
 		return err
 	}
