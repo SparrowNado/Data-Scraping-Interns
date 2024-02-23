@@ -11,9 +11,13 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
+)
+
+var (
+	wg   sync.WaitGroup
+	base = "https://linux.oracle.com/security/oval/"
 )
 
 type OvalDefinitions struct {
@@ -131,23 +135,17 @@ type OvalDefinitions struct {
 }
 
 func main() {
-	url := "https://linux.oracle.com/security/oval/"
-	files, err := fetchFiles(url)
+	files, err := fetchFiles(base)
 	if err != nil {
 		panic(err)
 	}
 
-	var wg sync.WaitGroup
+	// var wg sync.WaitGroup
+	wg.Add(len(files))
 	for _, file := range files {
-		wg.Add(1)
-		go func(file string) {
-			defer wg.Done()
-			err := processFile(file)
-			if err != nil {
-				fmt.Printf("Error processing %s: %s\n", file, err)
-			}
-		}(file)
+		go processFile(file)
 	}
+
 	wg.Wait()
 	fmt.Println("All files processed successfully.")
 }
@@ -172,7 +170,7 @@ func fetchFiles(url string) ([]string, error) {
 	links := extractLinks(string(body))
 	for _, link := range links {
 		if strings.HasSuffix(link, ".xml.bz2") {
-			files = append(files, url+link)
+			files = append(files, link)
 		}
 	}
 
@@ -198,36 +196,35 @@ func extractLinks(html string) []string {
 	}
 	return links
 }
+func processFile(file string) {
+	defer wg.Done()
 
-func processFile(url string) error {
-	resp, err := http.Get(url)
+	fmt.Printf("Downloading file %s...\n", file)
+	resp, err := http.Get(base + file)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to download file: %s", resp.Status)
+		panic(fmt.Errorf("failed to download file: %s", resp.Status))
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		panic(err)
 	}
-
-	// Extract filename from URL
-	filename := filepath.Base(url)
 
 	var xmlContent []byte
 
 	// Check if the file is compressed
-	if strings.HasSuffix(filename, ".bz2") {
+	if strings.HasSuffix(file, ".bz2") {
 		// Decompress the bz2 file
 		reader := bytes.NewReader(body)
 		bzip2Reader := bzip2.NewReader(reader)
 		xmlContent, err = io.ReadAll(bzip2Reader)
 		if err != nil {
-			return err
+			panic(err)
 		}
 	} else {
 		// File is not compressed, use the body as is
@@ -238,39 +235,38 @@ func processFile(url string) error {
 	var ovalDefinitions OvalDefinitions
 	err = xml.Unmarshal(xmlContent, &ovalDefinitions)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	// Create JSON filename
-	jsonFilename := strings.TrimSuffix(filename, ".xml.bz2") + ".json"
+	jsonFilename := strings.TrimSuffix(file, ".xml.bz2") + ".json"
 
 	// Marshal OvalDefinitions to JSON
 	jsonData, err := json.MarshalIndent(ovalDefinitions, "", "    ")
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	// Write JSON content to a file
 	err = os.WriteFile(jsonFilename, jsonData, 0644)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	// Create XML filename
-	xmlFilename := strings.TrimSuffix(filename, ".xml.bz2") + ".xml"
+	xmlFilename := strings.TrimSuffix(file, ".xml.bz2") + ".xml"
 
 	// Marshal OvalDefinitions to XML
 	xmlData, err := xml.MarshalIndent(ovalDefinitions, "", "    ")
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	// Write XML content to a file
 	err = os.WriteFile(xmlFilename, xmlData, 0644)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	fmt.Printf("Files %s and %s processed successfully.\n", jsonFilename, xmlFilename)
-	return nil
 }
