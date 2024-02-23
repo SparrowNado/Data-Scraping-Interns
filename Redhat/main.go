@@ -1,3 +1,5 @@
+// TODO: fix API fetch error handling
+
 package main
 
 import (
@@ -63,18 +65,14 @@ func fetchJSON(url string) (CVEData, error) {
 }
 
 func downloadFiles(data CVEData) {
+	wg.Add(len(data))
+
 	for _, entry := range data {
 		if entry.ResourceURL != "" {
-			wg.Add(1)
-			go func(url string) {
-				defer wg.Done()
-				err := downloadFile(url)
-				if err != nil {
-					fmt.Printf("Error downloading file %s: %s\n", url, err)
-				}
-			}(entry.ResourceURL)
+			go downloadFile(entry.ResourceURL)
 		}
 	}
+
 	wg.Wait()
 }
 
