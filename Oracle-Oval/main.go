@@ -253,20 +253,5 @@ func processFile(file string) {
 		panic(err)
 	}
 
-	// Create XML filename
-	xmlFilename := strings.TrimSuffix(file, ".xml.bz2") + ".xml"
-
-	// Marshal OvalDefinitions to XML
-	xmlData, err := xml.MarshalIndent(ovalDefinitions, "", "    ")
-	if err != nil {
-		panic(err)
-	}
-
-	// Write XML content to a file
-	err = os.WriteFile(xmlFilename, xmlData, 0644)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("Files %s and %s processed successfully.\n", jsonFilename, xmlFilename)
+	fmt.Printf("Files %s processed successfully.\n", jsonFilename)
 }
