@@ -188,12 +188,6 @@ func processFile(file string) {
 		panic(err)
 	}
 
-	// Write the XML content to a file
-	err = os.WriteFile(file, body, 0644)
-	if err != nil {
-		panic(err)
-	}
-
 	// Unmarshal XML content
 	var ovalDefinitions OvalDefinitions
 	err = xml.Unmarshal(body, &ovalDefinitions)
